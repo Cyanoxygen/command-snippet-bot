@@ -37,7 +37,7 @@ Original idea by Chisaka.
 
   _You can insert multi-line snippets into snippets section._
 
-- To edit a snippet added by YOU:
+- To edit a snippet added by YOURSELF:
   ```
   /editsnippet tag desc|snippet
   <new text or snippet here>
@@ -59,7 +59,7 @@ For every command snippets you should give them a unique tag (or ID). Then the t
 | `commands:global`     | `hash` | To store all commands corresponding to each tag.             |
 | `descriptions:global` | `hash` | To store the given description of each tag.                  |
 | `credits:global`      | `hash` | To store the ident of user who added the command to the bot. |
-| `createdby:global`    | `set`  | To store the tags created by this user                       |
+| `createdby:{credit}`  | `set`  | To store the tags created by this user                       |
 
 Plus, for more friendly outputs, we need a extra hash to match the username and user ident, so that the user ID won't be showed in the result message:
 
@@ -67,14 +67,17 @@ Plus, for more friendly outputs, we need a extra hash to match the username and 
 HSET usernames:global userid first_name
 ```
 
+To get the username, you can simply call `get_user_name(ident: str)` .
+
 For groups, the idea is that a tag may belong to more than one group, a group could contain many of tags. This is usually more complicated than tags.  
 To handle groups completely, we need at least 3 keys per tag: 
 
-| Key                       | Type  | Description                                       |
-| ------------------------- | ----- | ------------------------------------------------- |
-| `taggroups:global`        | `set` | To store all of the group names.                  |
-| `taggroup:global:{group}` | `set` | To store all of the tags belong to this `group` . |
-| `togroups:global:{tag}`   | `set` | To store all of the groups belong to the `tag`.   |
+| Key                       | Type   | Description                                       |
+| ------------------------- | ------ | ------------------------------------------------- |
+| `taggroups:global`        | `set`  | To store all of the group names.                  |
+| `g_description:global`   | `hash` | To store description of the group.                |
+| `taggroup:global:{group}` | `set`  | To store all of the tags belong to this `group` . |
+| `togroups:global:{tag}`   | `set`  | To store all of the groups belong to the `tag`.   |
 
 Due to the flaw of my design, this bot code should be strictly written. It means that to modify a snippet you should look for all of these keys to find something related to this tag.
 
