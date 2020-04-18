@@ -1,0 +1,6 @@
+config.ini
+config.py
+.vscode
+.idea
+__pycache__
+*.session
