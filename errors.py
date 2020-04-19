@@ -24,7 +24,9 @@ class TagAlreadyExists(BaseException):
 
 class TagNotOwned(BaseException):
 	'''
-	Will be raised if the user does not match the credit.
+	Will be raised if the user is not able to do soemthing.  
+	
+	Most cases is, to delete or edit a snippet created by other user.
 	'''
 	def __init__(self):
 		pass
