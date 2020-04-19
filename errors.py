@@ -1,6 +1,6 @@
 from texts import *
 
-class TagNotFound(BaseException):
+class TagNotFound(Exception):
 	'''
 	Will be raised if the tag was not found in the database.
 	'''
@@ -11,7 +11,7 @@ class TagNotFound(BaseException):
 		return err_tag_not_exist
 
 
-class TagAlreadyExists(BaseException):
+class TagAlreadyExists(Exception):
 	'''
 	Will be raised if the tag already exists.
 	'''
@@ -22,10 +22,10 @@ class TagAlreadyExists(BaseException):
 		return err_tag_exists
 
 
-class TagNotOwned(BaseException):
+class TagNotOwned(Exception):
 	'''
 	Will be raised if the user is not able to do soemthing.  
-	
+
 	Most cases is, to delete or edit a snippet created by other user.
 	'''
 	def __init__(self):
