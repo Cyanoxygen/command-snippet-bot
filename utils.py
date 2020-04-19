@@ -148,7 +148,7 @@ def getsnippet(tag: str) -> Snippet:
 	Raises: `TagNotFound` if the tag is not exist in the database.
 	"""
 	if not Redis.sismember(TAGS_GBL, tag):
-		raise TagNotFound(tag)
+		raise TagNotFound
 	desc = Redis.hget(DESC_GBL, tag).decode('utf-8')
 	command = Redis.hget(CMDS_GBL, tag).decode('utf-8')
 	credit = Redis.hget(CRDT_GBL, tag).decode('utf-8')
