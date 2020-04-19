@@ -3,8 +3,10 @@ help_text_inline = '''Use inline mode to search tags.'''
 cmd_format_template = '**Tag:** `{0}` By {1}\n**Description:** {2}\n**Snippet:**\n```{3}```'
 
 err_tag_not_exist = 'Tag does not exist! Exiting.'
-err_not_your_tag = 'This tag is not created by yourself. To edit this snippet, please contact the creator of the snippet.'
+err_not_your_tag = 'You do not own this snippet! To edit or remove this snippet, please contact the creator of the snippet.'
+err_tag_exists = 'Error: tag exists. Choose a different name and try again :) {0}'
 
+ntf_deleted = 'Done! This snippet was deleted, let me "pop" this snippet for you: \n{}'
 
 help_text_about = '''This bot can help you to store command or code snippets, identified by a Tag.
 Please note that your snippet will be publicly available.
