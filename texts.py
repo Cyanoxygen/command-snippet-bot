@@ -5,6 +5,7 @@ cmd_format_template = '**Tag:** `{0}` By {1}\n**Description:** {2}\n**Snippet:**
 err_tag_not_exist = 'Tag does not exist! Exiting.'
 err_not_your_tag = 'You do not own this snippet, or you do not have permission to modify. To edit or remove this snippet, please contact the creator of the snippet.'
 err_tag_exists = 'Sorry but the tag is already exists. Choose a different name and try again :)'
+err_invalid_edit = 'Invalid edit keyword, the second param must be `desc` for replacing descriptions or `snippet` for replacing the snippet itself.'
 
 ntf_deleted = 'Done! This snippet was deleted, let me "pop" this snippet for you: \n{}'
 
