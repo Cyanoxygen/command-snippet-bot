@@ -105,7 +105,7 @@ def rmsnippet(tag: str, user: str) -> None:
 	
 	if not isauthed(user, tag):
 		raise TagNotOwned
-	
+
 	credit = Redis.hget(CRDT_GBL, tag).decode('utf-8')
 	Redis.srem(TAGS_GBL, tag)
 	Redis.hdel(CMDS_GBL, tag)
@@ -132,6 +132,8 @@ def editsnippet(tag: str, edit: str, content: str, user: str) -> None:
 		Redis.hset(DESC_GBL, tag, content)
 	elif edit == 'snippet':
 		Redis.hset(CMDS_GBL, tag, content)
+	else:
+		raise Exception(err_invalid_edit)
 
 
 def getsnippet(tag: str) -> Snippet:
