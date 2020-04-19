@@ -99,6 +99,10 @@ def rmsnippet(tag: str, user: str) -> None:
 	- `user` : `str` , the user who takes the action, for verification use.
 
 	Returns: `None`
+	Raises:
+	
+	- `TagNotFound` if tag is not found.
+	- `TagNotOwned` if tag is not owned by the user.
 	"""
 	if not tagexists(tag):
 		raise TagNotFound
@@ -125,6 +129,8 @@ def editsnippet(tag: str, edit: str, content: str, user: str) -> None:
 	- `content` : `str` , the content to be replaced.
 	- `user` : `str` , the user who takes action.
 	'''
+	if not tagexists:
+		raise TagNotFound
 	if not isauthed(user, tag=tag):
 		raise TagNotOwned
 
@@ -164,6 +170,9 @@ def getsnippet_f(tag: str) -> Formated:
 
 	- `tag` : `str` , the unique tag to get for.
 	"""
+	if not tagexists(tag):
+		raise TagNotFound
+
 	cmd = getsnippet(tag)
 	command = cmd[0]
 	desc = cmd[1]
