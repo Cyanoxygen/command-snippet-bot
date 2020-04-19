@@ -1,11 +1,16 @@
-from datetime import timedelta
-from RedisClient import Redis
-from pyrogram import Message, InlineQueryResultArticle, InputTextMessageContent
-from errors import *
-from time import sleep
 import re
 import subprocess
+import traceback
+
+from config import bot_name, bot_master
+from datetime import timedelta
+from time import sleep
 from typing import List, NewType
+
+from pyrogram import InlineQueryResultArticle, InputTextMessageContent, Message
+
+from errors import *
+from RedisClient import Redis
 from texts import *
 
 freemem_command = """free | awk 'FNR == 2 {print ($7/1048576)"GB / "($2/1048576)"GB" }'"""
@@ -17,8 +22,8 @@ Snippet = List[str]
 Formated = str
 
 empty_inline_query = [InlineQueryResultArticle(
-    title="Please enter a query text", description="Type any word to search tags",
-    input_message_content=InputTextMessageContent("Empty query string, I have nothing to do.")
+	title="Please enter a query text", description="Type any word to search tags",
+	input_message_content=InputTextMessageContent("Empty query string, I have nothing to do.")
 )]
 
 TAGS_GBL = 'tags:global'
@@ -33,258 +38,310 @@ TOGRPS_GBL = 'togroups:global'
 
 
 def tagexists(tag: str) -> bool:
-    return Redis.sismember(TAGS_GBL, tag)
+	return Redis.sismember(TAGS_GBL, tag)
 
 
-def setcommand(tag: str, desc: str, command: str, credit: str) -> None:
-    """
-    To add or set a command into the database.
-    Params:
-    - `tag` : `str` , unique tag of the command
-    - `desc` : `str` , description of the command
-    - `command` : `str` , the command itself
-    - `credit` : `str` , ident of the user who add the command
+def isauthed(user: str, tag: str='', adminonly: bool = False) -> bool:
+	'''
+	Determines if the user is able to do something, e.g. to edit a snippet or to delete a snippet.  
+	Only the user who created the snippet, bot admins and bot master (see config.py) can do such an operation.
 
-    Returns: `None`
-    """
-    Redis.sadd(TAGS_GBL, tag)
-    Redis.hset(CMDS_GBL, tag, command)
-    Redis.hset(DESC_GBL, tag, desc)
-    Redis.hset(CRDT_GBL, tag, credit)
-    Redis.sadd(CREATEDBY.format(credit), tag)
+	Params:
+	
+	- `tag` : the tag needed to be authenticated.
+	- `user` : the user who takes the action.
+	- `adminonly` : `bool` , if the action is admin only, then set this to True.
 
-
-def rmcommand(tag: str) -> None:
-    """
-    To remove a command into the database.
-    Params:
-    - `tag` : `str` , unique tag of the command to be removed
-
-    Returns: `None`
-    """
-    Redis.srem(TAGS_GBL, tag)
-    Redis.hdel(CMDS_GBL, tag)
-    Redis.hdel(DESC_GBL, tag)
-    credit = Redis.hget(CRDT_GBL, tag).decode('utf-8')
-    Redis.srem(CREATEDBY.format(credit), tag)
-    Redis.hdel(CRDT_GBL, tag)
+	Return:  
+	`True` if the user is qualified or
+	`False` if the user is not qualified.
+	'''
+	qualified = [bot_master]
+	# Get bot admins
+	_ = Redis.smembers(f'botadmin:{bot_name}')
+	for a in _:
+		qualified.append(a.encode('utf-8'))
+	
+	# Get the credit of the tag
+	if tag:
+		credit = getsnippet(tag)[2]
+		qualified.append(credit)
+	
+	return user in qualified
 
 
-def editsnippet(tag: str, edit: str, content: str):
-    if edit == 'desc':
-        Redis.hset(DESC_GBL, tag, content)
-    elif edit == 'snippet':
-        Redis.hset(CMDS_GBL, tag, content)
+def setsnippet(tag: str, desc: str, command: str, credit: str) -> None:
+	"""
+	To add or set a command into the database.
+	Params:
+	- `tag` : `str` , unique tag of the command
+	- `desc` : `str` , description of the command
+	- `command` : `str` , the command itself
+	- `credit` : `str` , ident of the user who add the command
+
+	Returns: `None`
+	"""
+	if tagexists(tag):
+		raise TagAlreadyExists
+
+	Redis.sadd(TAGS_GBL, tag)
+	Redis.hset(CMDS_GBL, tag, command)
+	Redis.hset(DESC_GBL, tag, desc)
+	Redis.hset(CRDT_GBL, tag, credit)
+	Redis.sadd(CREATEDBY.format(credit), tag)
 
 
-def getcommand(tag: str) -> Snippet:
-    """
-    Get everything of the given tag, if exists.
-    
-    Returns: `list`
-    - `[0]` : `str`, command snippet itself.
-    - `[1]` : `str`, the description.
-    - `[2]` : `str`, the credit.
+def rmsnippet(tag: str, user: str) -> None:
+	"""
+	To remove a command into the database.
+	Params:
+	- `tag` : `str` , unique tag of the command to be removed
+	- `user` : `str` , the user who takes the action, for verification use.
 
-    Raises: `TagNotFound` if the tag is not exist in the database.
-    """
-    if not Redis.sismember(TAGS_GBL, tag):
-        raise TagNotFound(tag)
-    desc = Redis.hget(DESC_GBL, tag).decode('utf-8')
-    command = Redis.hget(CMDS_GBL, tag).decode('utf-8')
-    credit = Redis.hget(CRDT_GBL, tag).decode('utf-8')
-    return (command, desc, credit)
+	Returns: `None`
+	"""
+	if not tagexists(tag):
+		raise TagNotFound
+	
+	if not isauthed(user, tag):
+		raise TagNotOwned
+	
+	credit = Redis.hget(CRDT_GBL, tag).decode('utf-8')
+	Redis.srem(TAGS_GBL, tag)
+	Redis.hdel(CMDS_GBL, tag)
+	Redis.hdel(DESC_GBL, tag)
+	Redis.srem(CREATEDBY.format(credit), tag)
+	Redis.hdel(CRDT_GBL, tag)
 
 
-def getcommand_f(tag: str) -> Formated:
-    """
-    Get a formatted string using getcommand().
-    You could only use this if the tag EXISTS. Or the child call (`getcommand()`) will raise a exception.
-    
-    Params:
+def editsnippet(tag: str, edit: str, content: str, user: str) -> None:
+	'''
+	Edit a snippet. Which to edit depends on the selection.
+	
+	Params:
 
-    - `tag` : `str` , the unique tag to get for.
-    """
-    cmd = getcommand(tag)
-    command = cmd[0]
-    desc = cmd[1]
-    credit = cmd[2]
-    user = get_user_name(credit)
-    return cmd_format_template.format(tag, user, desc, command)
+	- `tag` : `str` , the tag to edit.
+	- `edit` : `str` - `desc` or `snippet` , to choose what to edit.
+	- `content` : `str` , the content to be replaced.
+	- `user` : `str` , the user who takes action.
+	'''
+	if not isauthed(user, tag=tag):
+		raise TagNotOwned
+
+	if edit == 'desc':
+		Redis.hset(DESC_GBL, tag, content)
+	elif edit == 'snippet':
+		Redis.hset(CMDS_GBL, tag, content)
+
+
+def getsnippet(tag: str) -> Snippet:
+	"""
+	Get everything of the given tag, if exists.
+
+	Returns: `list`
+	- `[0]` : `str`, command snippet itself.
+	- `[1]` : `str`, the description.
+	- `[2]` : `str`, the credit.
+
+	Raises: `TagNotFound` if the tag is not exist in the database.
+	"""
+	if not Redis.sismember(TAGS_GBL, tag):
+		raise TagNotFound(tag)
+	desc = Redis.hget(DESC_GBL, tag).decode('utf-8')
+	command = Redis.hget(CMDS_GBL, tag).decode('utf-8')
+	credit = Redis.hget(CRDT_GBL, tag).decode('utf-8')
+	return (command, desc, credit)
+
+
+def getsnippet_f(tag: str) -> Formated:
+	"""
+	Get a formatted string using getcommand().
+	You could only use this if the tag EXISTS. Or the child call (`getcommand()`) will raise a exception.
+
+	Params:
+
+	- `tag` : `str` , the unique tag to get for.
+	"""
+	cmd = getsnippet(tag)
+	command = cmd[0]
+	desc = cmd[1]
+	credit = cmd[2]
+	user = get_user_name(credit)
+	return cmd_format_template.format(tag, user, desc, command)
 
 
 def tagsingroup(group: str) -> List[Tags]:
-    """
-    Get all tags belongs to the group.  
+	"""
+	Get all tags belongs to the group.
 
-    Returns:
+	Returns:
 
-    - `['', []]` if the group is not exist, there's a chance that the group was emptied.  
-    - `[str, list[str]]` the first string is the description of the group, the latter is a list of the tags in the given group.  
+	- `['', []]` if the group is not exist, there's a chance that the group was emptied.
+	- `[str, list[str]]` the first string is the description of the group, the latter is a list of the tags in the given group.
 
-    Raises: None
-    """
-    result = ['', []]
-    res = Redis.smembers(f'taggroup:global:{group}')
-    if res:
-        result[0] = Redis.hget('g_description:global', group)
-        for e in res:
-            result[1].append(e.decode('utf-8'))
+	Raises: None
+	"""
+	result = ['', []]
+	res = Redis.smembers(f'taggroup:global:{group}')
+	if res:
+		result[0] = Redis.hget('g_description:global', group)
+		for e in res:
+			result[1].append(e.decode('utf-8'))
 
-    return result
+	return result
 
 
 def listtags(query: str, count: int = 10) -> List[str]:
-    """
-    List all tags matches the pattern.
+	"""
+	List all tags matches the pattern.
 
-    Returns:
+	Returns:
 
-    - `[]` if no tags was found
-    - `list[str]` the list of the tags matched the query pattern 
+	- `[]` if no tags was found
+	- `list[str]` the list of the tags matched the query pattern
 
-    Raises: None
-    """
-    result = []
-    res = Redis.sscan('tags:global', match=f'*{query}*')[1]
-    if res:
-        for e in res:
-            result.append(e.decode('utf-8'))
+	Raises: None
+	"""
+	result = []
+	res = Redis.sscan('tags:global', match=f'*{query}*')[1]
+	if res:
+		for e in res:
+			result.append(e.decode('utf-8'))
 
-    return result
+	return result
 
 
 def grouplength(group):
-    return Redis.scard(f'taggroups:global:{group}')
+	return Redis.scard(f'taggroups:global:{group}')
 
 
 def iscreatedby(credit: str, tag: str) -> bool:
-    """
-    Determines if the `tag` is created by user `credit`.
-    Just simply calling Redis method.
+	"""
+	Determines if the `tag` is created by user `credit`.
+	Just simply calling Redis method.
 
-    Return `True` or `False` .
-    """
-    return Redis.hexists(CREATEDBY.format(credit), tag)
+	Return `True` or `False` .
+	"""
+	return Redis.hexists(CREATEDBY.format(credit), tag)
 
 
 def listgrps(query: str, count: int = 20) -> List[str]:
-    """
-    List all tags matches the pattern.
-    Params:
+	"""
+	List all tags matches the pattern.
+	Params:
 
-    - `query`: `str` , query string
-    - `count`: `str` , counts of the given results.
+	- `query`: `str` , query string
+	- `count`: `str` , counts of the given results.
 
-    Returns:
+	Returns:
 
-    - `[]` if no tags was found
-    - `list[str]` the list of the groups matched the query pattern 
+	- `[]` if no tags was found
+	- `list[str]` the list of the groups matched the query pattern
 
-    Raises: None
-    """
-    result = []
-    res = Redis.sscan('taggroups:global', match=f'*{query}*', count=count)[1]
-    if res[1]:
-        for e in res[1]:
-            result.append(e.decode('utf-8'))
+	Raises: None
+	"""
+	result = []
+	res = Redis.sscan('taggroups:global', match=f'*{query}*', count=count)[1]
+	if res[1]:
+		for e in res[1]:
+			result.append(e.decode('utf-8'))
 
-    return res
+	return res
 
 
 def addreport(tag, reason, user, chat):
-    """
-    Record a abuse report.
-    Will be removed after being processed.
-    """
-    Redis.sadd('reported:global', tag)
-    Redis.hset('repreason:global', tag, reason)
-    Redis.hset('reportedby:global', tag, user)
-    Redis.hset('reportedfrom:global', tag, chat)
+	"""
+	Record a abuse report.
+	Will be removed after being processed.
+	"""
+	Redis.sadd('reported:global', tag)
+	Redis.hset('repreason:global', tag, reason)
+	Redis.hset('reportedby:global', tag, user)
+	Redis.hset('reportedfrom:global', tag, chat)
 
 
 def rmreport(tag):
-    """
-    Remove a recorded report.
-    This is not related to tag itself, whether the snippet was deleted or not.
-    """
-    Redis.srem('reported:global', tag)
-    Redis.hdel('repreason:global', tag)
-    Redis.hdel('reportedby:global', tag)
-    Redis.hdel('reportedfrom:global', tag)
+	"""
+	Remove a recorded report.
+	This is not related to tag itself, whether the snippet was deleted or not.
+	"""
+	Redis.srem('reported:global', tag)
+	Redis.hdel('repreason:global', tag)
+	Redis.hdel('reportedby:global', tag)
+	Redis.hdel('reportedfrom:global', tag)
 
 
 def get_user_name(ident: str) -> str:
-    return Redis.hget('username', ident).decode('utf-8')
+	return Redis.hget('username', ident).decode('utf-8')
 
 
 def put_user_name(ident: str, name: str) -> str:
-    Redis.hset('username', ident, name)
+	Redis.hset('username', ident, name)
 
 
 def generatereply(query: str) -> List[InlineQueryResultArticle]:
-    """
-    Generate the response to the inline query.
+	"""
+	Generate the response to the inline query.
 
-    Returns:
-    
-    - list[InlineQueryResultArticle]
-    """
-    anslist = []  # List of inlinequeryanswer
-    if query.split(' ')[0] == 'group':
-        # Search for groups if the firstword of query is 'group'
-        for i in listgrps(query.split(' ')[1]):
-            _ = tagsingroup(i)
-            tags = _[1]
-            desc = _[0]
-            # Acquire info of the group
-            length = grouplength(i)
-            text = "\n".join(tags)
-            anslist.append(InlineQueryResultArticle(
-                # Add a result to anslist
-                title=f'Tag Group {i} {length} tags',
-                description=desc,
-                input_message_content=InputTextMessageContent(
-                    message_text=f'Tags:\n{text}'
-                )
-            ))
-    else:
-        q = query.split(' ')[0]  # Search for TAGS using keyword
-        for i in listtags(q):  # Acquire tag info
-            cmd = getcommand(i)
-            command = cmd[0]
-            desc = cmd[1]
-            credit = cmd[2]
-            anslist.append(InlineQueryResultArticle(
-                title=i,
-                description=desc,
-                input_message_content=InputTextMessageContent(
-                    message_text=cmd_format_template.format(i, get_user_name(credit), desc, command)
-                )
-            ))
-    if len(anslist) == 0:
-        anslist.append(InlineQueryResultArticle(
-            title=f'No result of {query}',
-            input_message_content=InputTextMessageContent(f'No results found: {query}')
-        ))
-    return anslist
+	Returns:
+
+	- list[InlineQueryResultArticle]
+	"""
+	anslist = []  # List of inlinequeryanswer
+	if query.split(' ')[0] == 'group':
+		# Search for groups if the firstword of query is 'group'
+		for i in listgrps(query.split(' ')[1]):
+			_ = tagsingroup(i)
+			tags = _[1]
+			desc = _[0]
+			# Acquire info of the group
+			length = grouplength(i)
+			text = "\n".join(tags)
+			anslist.append(InlineQueryResultArticle(
+				# Add a result to anslist
+				title=f'Tag Group {i} {length} tags',
+				description=desc,
+				input_message_content=InputTextMessageContent(
+					message_text=f'Tags:\n{text}'
+				)
+			))
+	else:
+		q = query.split(' ')[0]  # Search for TAGS using keyword
+		for i in listtags(q):  # Acquire tag info
+			cmd = getsnippet(i)
+			command = cmd[0]
+			desc = cmd[1]
+			credit = cmd[2]
+			anslist.append(InlineQueryResultArticle(
+				title=i,
+				description=desc,
+				input_message_content=InputTextMessageContent(
+					message_text=cmd_format_template.format(i, get_user_name(credit), desc, command)
+				)
+			))
+	if len(anslist) == 0:
+		anslist.append(InlineQueryResultArticle(
+			title=f'No result of {query}',
+			input_message_content=InputTextMessageContent(f'No results found: {query}')
+		))
+	return anslist
 
 
 def delmsg(msg: Message, timeout: int = 15) -> None:
-    """
-    This function is an alias for sleep_timeout_and_delmsg()
-    """
-    sleep_timeout_and_delmsg(msg, timeout)
+	"""
+	This function is an alias for sleep_timeout_and_delmsg()
+	"""
+	sleep_timeout_and_delmsg(msg, timeout)
 
 
 def sleep_timeout_and_delmsg(msg: Message, timeout: int = 15) -> None:
-    """
-    To delete a message after a timeout.
-    The timeout is 15 by default.
-    This will be helpful to the response of a command and the command message itself.
-    """
-    sleep(timeout)
-    try:
-        msg.delete()
-    except:
-        pass
+	"""
+	To delete a message after a timeout.
+	The timeout is 15 by default.
+	This will be helpful to the response of a command and the command message itself.
+	"""
+	sleep(timeout)
+	try:
+		msg.delete()
+	except:
+		pass
