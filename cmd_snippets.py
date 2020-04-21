@@ -1,16 +1,10 @@
+from bot import bot, sendmaster
+from utils import *
 from pyrogram import Client, Filters, Message, InlineQuery
-from RedisClient import Redis
+from redisclient import Redis
 from config import *
 from errors import *
-from utils import *
 from texts import *
-
-
-bot = Client(
-	session_name=bot_name,
-	bot_token=bot_token
-)
-
 
 @bot.on_message(Filters.command(['addsnippet', f'addsnippet@{bot_name}']))
 def handler_addsnippet(cli: Client, msg: Message) -> None:
@@ -88,17 +82,46 @@ def handler_query(client: Client, iquery: InlineQuery):
 	)
 
 
-# Miscellaneous utilities
-@bot.on_message(Filters.command(['ping', f'ping@{bot_name}']))
-def handler_ping(cli, msg):
-	uptime = subprocess.getoutput(uptime_command)
-	loadavg = subprocess.getoutput(loadavg_command)
-	freemem = subprocess.getoutput(freemem_command)
-	uptime = str(timedelta(seconds=int(float(uptime))))
-	delmsg(msg.reply(
-		f'I\'m alive.\nYour ID:`{msg.from_user.id}`\nChat ID:{msg.chat.id}\nUptime: `{uptime}`\nLoadavg: `{loadavg}`\nFree: `{freemem}`'),
-	       30)
+@bot.on_message(Filters.command(['reportsnippet', f'reportsnippet@{bot_name}']))
+def handler_reportsnippet(cli, msg):
+	if len(msg.command) > 2:
+		lines = msg.text.split('\n')
+		if len(lines) > 1:
+			try:
+				tag = msg.command[1]
+				reason = '\n'.join(lines[1:])
+				user = str(msg.from_user.id)
+				chat = str(msg.chat.id)
+				addreport(
+					tag=tag,
+					reason=reason,
+					user=user,
+					chat=chat
+					)
+				Redis.hset('username', user, msg.from_user.first_name)
+			except Exception as e:
+				delmsg(msg.reply(e))
+				return
+		else:
+			delmsg(msg.reply(help_text_report))
+	else:
+		delmsg(msg.reply(help_text_report))
 	delmsg(msg, 0)
 
 
-bot.start()
+# Miscellaneous utilities
+@bot.on_message(Filters.command(['ping', f'ping@{bot_name}']))
+def handler_ping(cli, msg):
+	import sys
+	if sys.platform != 'win32':
+		uptime = subprocess.getoutput(uptime_command)
+		loadavg = subprocess.getoutput(loadavg_command)
+		freemem = subprocess.getoutput(freemem_command)
+		uptime = str(timedelta(seconds=int(float(uptime))))
+		delmsg(msg.reply(
+			f'I\'m alive.\nYour ID:`{msg.from_user.id}`\nChat ID:{msg.chat.id}\nUptime: `{uptime}`\nLoadavg: `{loadavg}`\nFree: `{freemem}`'),
+		30)
+	else:
+		delmsg(msg.reply('I\'m alive!'))
+	delmsg(msg, 0)
+
