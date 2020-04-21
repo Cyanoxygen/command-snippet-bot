@@ -1,5 +1,7 @@
 # Command Snippet Bot
 
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="86" height="20"><linearGradient id="s" x2="0" y2="100%"><stop offset="0" stop-color="#bbb" stop-opacity=".1"/><stop offset="1" stop-opacity=".1"/></linearGradient><clipPath id="r"><rect width="86" height="20" rx="3" fill="#fff"/></clipPath><g clip-path="url(#r)"><rect width="49" height="20" fill="#555"/><rect x="49" width="37" height="20" fill="#26c6da"/><rect width="86" height="20" fill="url(#s)"/></g><g fill="#fff" text-anchor="middle" font-family="DejaVu Sans,Verdana,Geneva,sans-serif" font-size="110"><text x="255" y="150" fill="#010101" fill-opacity=".3" transform="scale(.1)" textLength="390">Python</text><text x="255" y="140" transform="scale(.1)" textLength="390">Python</text><text x="665" y="150" fill="#010101" fill-opacity=".3" transform="scale(.1)" textLength="270">3.7+</text><text x="665" y="140" transform="scale(.1)" textLength="270">3.7+</text></g></svg> <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="118" height="20"><linearGradient id="s" x2="0" y2="100%"><stop offset="0" stop-color="#bbb" stop-opacity=".1"/><stop offset="1" stop-opacity=".1"/></linearGradient><clipPath id="r"><rect width="118" height="20" rx="3" fill="#fff"/></clipPath><g clip-path="url(#r)"><rect width="63" height="20" fill="#555"/><rect x="63" width="55" height="20" fill="#26c6da"/><rect width="118" height="20" fill="url(#s)"/></g><g fill="#fff" text-anchor="middle" font-family="DejaVu Sans,Verdana,Geneva,sans-serif" font-size="110"><text x="325" y="150" fill="#010101" fill-opacity=".3" transform="scale(.1)" textLength="530">pyrogram</text><text x="325" y="140" transform="scale(.1)" textLength="530">pyrogram</text><text x="895" y="150" fill="#010101" fill-opacity=".3" transform="scale(.1)" textLength="450">0.16.0+</text><text x="895" y="140" transform="scale(.1)" textLength="450">0.16.0+</text></g></svg>
+
 > I will try to remember every command you told me.
 
 A bot stores command sinppets identified by their unique tags.
@@ -10,12 +12,31 @@ Original idea by Chisaka.
 
 ### Requirements
 
+- Python 3.7+
 - Modules (can be installed via `pip`):
 
   - `pyrogram` : to run the bot itself.
   - `redis` : the backend database
 
 - A running Redis server in localhost or remote
+  
+Clone or download this repo using any means you can use:
+
+```
+git clone https://github.com/Cyanoxygen/command-snippet-bot
+```
+
+Then edit `config.ini` and fill your App ID and App Hash.
+
+Last, edit `config.py` and fill your bot username (exclude `@` , e.g. `CmdSnipBot` ), bot token, your User ID (yes, your unique integer UID), and Redis server, port, password (if you have). 
+
+And just simply run `run.py` by any means you can execute it:
+
+```
+./run.py
+# Or
+python3 ./run.py    # or etc
+```
 
 ## Note
 
@@ -45,7 +66,54 @@ Original idea by Chisaka.
 
   - Note that you can only modify snippets which created by YOURSELF, modification to snippets created by other user is not accepted.
 
+- To remove your snippet from our database:
+  ```
+  /delsnippet tag
+  ```
+
+  Then bot will "pop" the snippet to be deleted for you, then delete it immidiately.
+  Since there's no confirmation please consider twice before you delete a snippet, and you can add it back at any time :)
+
+- If you see a snippet which contains words conflicting with common sense, feel free to use this command to send a report to us:
+  ```
+  /reportsnippet tag
+  reason
+  ```
+
 ## Insights
+
+### Code of conduct
+
+We divide the bot into several parts, and each part is represented in a single Python file:
+
+- `bot.py`
+  Defines a bot object using `pyrogram.Client`. Every action involved the bot should import `bot` first.
+
+- `config.ini`
+  Pyrogram `config.ini` file, contains App ID and App Hash.
+
+- `config.py`
+  bot config file, contains some necessary parameters in order to run this bot.
+
+- `cmd_snippet.py`
+  This file imports `bot` class, defines some handlers about bot commands, which modifies the Snippet database.
+  You can see lots of command handlers in this file, and these commands is just used for snippet related things. Plus, there's a inline query handler, to search tags by using inline uqery.
+
+- `cmd_moderator.py`
+  This file imports `bot` class, defines some handlers about managing this bot.
+  Commands defined in this file will be only available for bot master and bot administrators.
+
+- `errors.py`
+  Defines some exceptions raised by backend.
+
+- `texts.py`
+  Defines some text massages used widely in these code.
+
+- `utils.py`
+  The actual backend of the bot, responsible for interacting with database, managing bot moderators and etc.
+
+- `run.py`
+  To run this bot, just execute this file.
 
 ### Database structure
 
