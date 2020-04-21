@@ -10,6 +10,14 @@ err_invalid_edit = 'Invalid edit keyword, the second param must be `desc` for re
 ntf_deleted = 'Done! This snippet was deleted, let me "pop" this snippet for you: \n{}'
 ntf_ticket_sent = 'DOne! Your ticket was sent to Bot Admins. Please wait patiently until we do something.'
 
+ntf_accepted = '''{0}, Your abuse report of {1} was accepted and we removed it from the database.
+Thank you! Your effort will be appreciated. 
+'''
+
+ntf_rejected = '''Sorry {0}, but we cannot delete snippet {1} for you. 
+Anyway, thank you for the effort!
+'''
+
 help_text_about = '''This bot can help you to store command or code snippets, identified by a Tag.
 Please note that your snippet will be publicly available.
 
@@ -29,14 +37,6 @@ Example:
 Install youtube-dl
 sudo wget https://yt-dl.org/downloads/latest/youtube-dl -O /usr/local/bin/youtube-dl
 sudo chmod a+rx /usr/local/bin/youtube-dl```
-'''
-
-notify_accepted = '''{0}, Your abuse report of {1} was accepted and we removed it from the database.
-Thank you! Your effort will be appreciated. 
-'''
-
-notify_rejected = '''Sorry {0}, but your abuse report of {1} was denied. 
-Thank you for the effort!
 '''
 
 help_text_editsnippet = '''Edit a snippet created by yourself.
