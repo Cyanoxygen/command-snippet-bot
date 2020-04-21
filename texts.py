@@ -8,6 +8,7 @@ err_tag_exists = 'Sorry but the tag is already exists. Choose a different name a
 err_invalid_edit = 'Invalid edit keyword, the second param must be `desc` for replacing descriptions or `snippet` for replacing the snippet itself.'
 
 ntf_deleted = 'Done! This snippet was deleted, let me "pop" this snippet for you: \n{}'
+ntf_ticket_sent = 'DOne! Your ticket was sent to Bot Admins. Please wait patiently until we do something.'
 
 help_text_about = '''This bot can help you to store command or code snippets, identified by a Tag.
 Please note that your snippet will be publicly available.
