@@ -10,7 +10,7 @@ from typing import List, NewType
 from pyrogram import InlineQueryResultArticle, InputTextMessageContent, Message
 
 from errors import *
-from RedisClient import Redis
+from redisclient import Redis
 from texts import *
 
 freemem_command = """free | awk 'FNR == 2 {print ($7/1048576)"GB / "($2/1048576)"GB" }'"""
@@ -260,11 +260,14 @@ def listgrps(query: str, count: int = 20) -> List[str]:
 	return res
 
 
-def addreport(tag, reason, user, chat):
+def addreport(tag: str, reason: str, user: str, chat:str) -> None:
 	"""
 	Record a abuse report.
 	Will be removed after being processed.
 	"""
+	if not tagexists(tag):
+		raise TagNotFound
+	
 	Redis.sadd('reported:global', tag)
 	Redis.hset('repreason:global', tag, reason)
 	Redis.hset('reportedby:global', tag, user)
@@ -356,3 +359,4 @@ def sleep_timeout_and_delmsg(msg: Message, timeout: int = 15) -> None:
 		msg.delete()
 	except:
 		pass
+
