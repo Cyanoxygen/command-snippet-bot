@@ -5,8 +5,9 @@ from redisclient import Redis
 from config import *
 from errors import *
 from texts import *
+import subprocess
 
-@bot.on_message(Filters.command(['addsnippet', f'addsnippet@{bot_name}']))
+@bot.on_message(Filters.group & Filters.command(['addsnippet', f'addsnippet@{bot_name}']))
 def handler_addsnippet(cli: Client, msg: Message) -> None:
 	if len(msg.command) > 2:
 		lines = msg.text.split('\n')
@@ -29,7 +30,7 @@ def handler_addsnippet(cli: Client, msg: Message) -> None:
 	delmsg(msg, 0)
 
 
-@bot.on_message(Filters.command(['editsnippet', f'editsnippet@{bot_name}']))
+@bot.on_message(Filters.group & Filters.command(['editsnippet', f'editsnippet@{bot_name}']))
 def handler_editsnippet(cli, msg):
 	if len(msg.command) > 1:
 		lines = msg.text.split('\n')
@@ -51,7 +52,7 @@ def handler_editsnippet(cli, msg):
 	delmsg(msg, 0)
 
 
-@bot.on_message(Filters.command(['delsnippet', f'delsnippet@{bot_name}']))
+@bot.on_message(Filters.group & Filters.command(['delsnippet', f'delsnippet@{bot_name}']))
 def handler_delsnippet(cli, msg):
 	if len(msg.command) > 1:
 		try:
@@ -99,7 +100,8 @@ def handler_reportsnippet(cli, msg):
 					chat=chat
 					)
 				Redis.hset('username', user, msg.from_user.first_name)
-				sendmaster(f'New Report: \nTag: {getsnippet_f(tag)}\n Reported by {get_user_name(user)}\nReason: {reason}')
+				sendmaster(f'New Report: \nTag: {getsnippet_f(tag)}\nReported by {get_user_name(user)}\nReason: {reason}')
+				delmsg(msg.reply(ntf_ticket_sent))
 			except Exception as e:
 				delmsg(msg.reply(e))
 				return
