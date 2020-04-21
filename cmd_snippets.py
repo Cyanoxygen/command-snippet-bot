@@ -99,6 +99,7 @@ def handler_reportsnippet(cli, msg):
 					chat=chat
 					)
 				Redis.hset('username', user, msg.from_user.first_name)
+				sendmaster(f'New Report: \nTag: {getsnippet_f(tag)}\n Reported by {get_user_name(user)}\nReason: {reason}')
 			except Exception as e:
 				delmsg(msg.reply(e))
 				return
