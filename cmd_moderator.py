@@ -13,7 +13,7 @@ def handler_acceptrep(cli, msg):
 			user = get_user_name(Redis.hget('reportedby:global', tag).decode('utf-8'))
 			bot.send_message(
 				chat_id=chat,
-				text=ntf_accepted.format(get_user_name(user), tag)
+				text=ntf_accepted.format(user, tag)
 			)
 			rmsnippet(tag, bot_master)
 			rmreport(tag)
@@ -30,7 +30,7 @@ def handler_acceptrep(cli, msg):
 			user = get_user_name(Redis.hget('reportedby:global', tag).decode('utf-8'))
 			bot.send_message(
 				chat_id=chat,
-				text=ntf_rejected.format(get_user_name(user), tag)
+				text=ntf_rejected.format(user, tag)
 			)
 			rmreport(tag)
 	else:
