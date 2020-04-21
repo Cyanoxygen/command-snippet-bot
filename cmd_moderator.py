@@ -15,6 +15,7 @@ def handler_acceptrep(cli, msg):
 				chat_id=chat,
 				text=ntf_accepted.format(get_user_name(user), tag)
 			)
+			rmsnippet(tag, bot_master)
 			rmreport(tag)
 	else:
 		msg.reply('Insufficiant permission')
