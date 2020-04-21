@@ -18,11 +18,12 @@ def handler_addsnippet(cli: Client, msg: Message) -> None:
 				commands = '\n'.join(lines[2:])
 				credit = str(msg.from_user.id)
 				setsnippet(tag, desc, commands, credit)
+				Redis.hset('username', credit, msg.from_user.first_name)
+				delmsg(msg.reply(f'Done, the snippet was successfully added:\n{getsnippet_f(tag)}'), 30)
+				sendmaster(f'New Tag:\n{getsnippet_f(tag)}')
 			except Exception as e:
 				delmsg(msg.reply(e))
 				return
-			Redis.hset('username', credit, msg.from_user.first_name)
-			delmsg(msg.reply(f'Done, the snippet was successfully added:\n{getsnippet_f(tag)}'), 30)
 		else:
 			delmsg(msg.reply(help_text_addsnipppet))
 	else:
@@ -115,8 +116,7 @@ def handler_reportsnippet(cli, msg):
 # Miscellaneous utilities
 @bot.on_message(Filters.command(['ping', f'ping@{bot_name}']))
 def handler_ping(cli, msg):
-	import sys
-	if sys.platform != 'win32':
+	try:
 		uptime = subprocess.getoutput(uptime_command)
 		loadavg = subprocess.getoutput(loadavg_command)
 		freemem = subprocess.getoutput(freemem_command)
@@ -124,7 +124,7 @@ def handler_ping(cli, msg):
 		delmsg(msg.reply(
 			f'I\'m alive.\nYour ID:`{msg.from_user.id}`\nChat ID:{msg.chat.id}\nUptime: `{uptime}`\nLoadavg: `{loadavg}`\nFree: `{freemem}`'),
 		30)
-	else:
-		delmsg(msg.reply('I\'m alive!'))
+	except:
+		delmsg(msg.reply(f'I\'m alive!\nYour ID:`{msg.from_user.id}`\nChat ID:{msg.chat.id}'))
 	delmsg(msg, 0)
 
