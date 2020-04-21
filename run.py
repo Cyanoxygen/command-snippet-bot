@@ -8,7 +8,7 @@
 
 from bot import bot
 from cmd_snippets import *
-from moderator import *
+from cmd_moderator import *
 
 
 bot.run()
