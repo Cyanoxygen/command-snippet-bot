@@ -10,7 +10,7 @@ def handler_acceptrep(cli, msg):
 		if len(msg.command) == 2:
 			tag = msg.command[1]
 			chat = Redis.hget('reportedfrom:global', tag).decode('utf-8')
-			user = str(msg.from_user.id)
+			user = get_user_name(Redis.hget('reportedby:global', tag).decode('utf-8'))
 			bot.send_message(
 				chat_id=chat,
 				text=ntf_accepted.format(get_user_name(user), tag)
@@ -26,11 +26,12 @@ def handler_acceptrep(cli, msg):
 		if len(msg.command) == 2:
 			tag = msg.command[1]
 			chat = Redis.hget('reportedfrom:global', tag).decode('utf-8')
-			user = str(msg.from_user.id)
+			user = get_user_name(Redis.hget('reportedby:global', tag).decode('utf-8'))
 			bot.send_message(
 				chat_id=chat,
 				text=ntf_rejected.format(get_user_name(user), tag)
 			)
+			rmreport(tag)
 	else:
 		msg.reply('Insufficiant permission')
 	delmsg(msg, 0)
