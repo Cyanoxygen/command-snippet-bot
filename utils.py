@@ -60,7 +60,7 @@ def isauthed(user: str, tag: str='', adminonly: bool = False) -> bool:
 	# Get bot admins
 	_ = Redis.smembers(f'botadmin:{bot_name}')
 	for a in _:
-		qualified.append(a.encode('utf-8'))
+		qualified.append(a.decode('utf-8'))
 	
 	# Get the credit of the tag
 	if tag:
@@ -293,6 +293,21 @@ def put_user_name(ident: str, name: str) -> str:
 	Redis.hset('username', ident, name)
 
 
+def replace_keyword(src: str, rpls: list[str]) -> str:
+	"""
+	Replace keyword ::r:: in `src` with provided text in rpls.
+	"""
+	replace_count = src.count("::r::")
+	if replace_count == 0:
+		return src
+	length = len(rpls)
+	replaced = "".join(src) # Make a copy
+	for text in rpls:
+		replaced = replaced.replace("::r::", text, 1)
+
+	return replaced
+
+
 def generatereply(query: str) -> List[InlineQueryResultArticle]:
 	"""
 	Generate the response to the inline query.
@@ -320,10 +335,12 @@ def generatereply(query: str) -> List[InlineQueryResultArticle]:
 				)
 			))
 	else:
-		q = query.split(' ')[0]  # Search for TAGS using keyword
-		for i in listtags(q):  # Acquire tag info
+		_ = query.split(' ')[0]  # Search for TAGS using keyword
+		pattern = _[0]
+		argv = _[1:] if len(_) > 0 else [] 
+		for i in listtags(pattern):  # Acquire tag info
 			cmd = getsnippet(i)
-			command = cmd[0]
+			command = replace_keyword(cmd[0], argv)
 			desc = cmd[1]
 			credit = cmd[2]
 			anslist.append(InlineQueryResultArticle(
