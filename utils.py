@@ -293,7 +293,7 @@ def put_user_name(ident: str, name: str) -> str:
 	Redis.hset('username', ident, name)
 
 
-def replace_keyword(src: str, rpls: list[str]) -> str:
+def replace_keyword(src: str, rpls: list) -> str:
 	"""
 	Replace keyword ::r:: in `src` with provided text in rpls.
 	"""
