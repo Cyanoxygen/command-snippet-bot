@@ -335,7 +335,7 @@ def generatereply(query: str) -> List[InlineQueryResultArticle]:
 				)
 			))
 	else:
-		_ = query.split(' ')[0]  # Search for TAGS using keyword
+		_ = query.split(' ')  # Search for TAGS using keyword
 		pattern = _[0]
 		argv = _[1:] if len(_) > 0 else [] 
 		for i in listtags(pattern):  # Acquire tag info

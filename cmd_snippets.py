@@ -71,7 +71,7 @@ def handler_delsnippet(cli, msg):
 
 @bot.on_inline_query()
 def handler_query(client: Client, iquery: InlineQuery):
-	lst = iquery.query
+	lst = iquery.query.split(' ')
 	if lst[0] == '':
 		bot.answer_inline_query(
 			inline_query_id=iquery.id,
