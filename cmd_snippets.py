@@ -80,7 +80,7 @@ def handler_query(client: Client, iquery: InlineQuery):
 		return
 	bot.answer_inline_query(
 		inline_query_id=iquery.id,
-		results=generatereply(lst[0])
+		results=generatereply(lst)
 	)
 
 
