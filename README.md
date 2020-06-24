@@ -48,6 +48,10 @@ python3 ./run.py    # or etc
   
   ```@bot_name keyword```
 
+  - Now you can make some replacements to the placeholder in the snippets:
+    ```
+    @bot_name keyword replacement1 [replacement2] ...
+    ```
 - To add a snippet, please use command `/addsnippet` :
   
   ```
@@ -57,6 +61,10 @@ python3 ./run.py    # or etc
   ```
 
   _You can insert multi-line snippets into snippets section._
+
+
+  - Now you can let users to type custom arguments(e.g. an IP address) by placing a placeholder `::r::` , see below.
+
 
 - To edit a snippet added by YOURSELF:
   ```
@@ -79,6 +87,22 @@ python3 ./run.py    # or etc
   /reportsnippet tag
   reason
   ```
+
+- To make (use of) a customizable snippet:
+  - Please note that this is still experimental, the functrion is quite simple so that quoting with space characters is not supported yet.
+  - First, when you creating a snippet, place some placeholders (`::r::`) into the snippet. This placeholder will be placed _in order_ when a user type one or more replacement texts after the searching pattern:
+    ```
+    debootstrap --arch=amd64 --foreign ::r:: ::r::
+    ```
+  - When a user attempts to use this snippet, instead of the fixed arguments, user can type a few words to replace these:
+    ```
+    @bot_name debinstall sid /mnt/root
+    ```
+
+  - Then the final snippet will appear like this:
+    ```
+    debootstrap --arch=amd64 --foreign sid /mnt/root
+    ```
 
 ## Insights
 
@@ -170,9 +194,9 @@ If there's no input, bot will reply a notice which tells that the user must prov
 If there's input, bot will pick up the first word to search in the database:
 
 ```python
-generatereply(lst[0])
+generatereply(lst)
 # defination of generatereply(query):
-q = query.split(' ')[0]     # Search for TAGS using keyword
+q = query.split(' ')        # Search for TAGS using keyword
 for i in listtags(q):       # Acquire tag info
   # Add information to the result list and return to answer_inline_query()
 ```

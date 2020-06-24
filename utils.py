@@ -308,7 +308,7 @@ def replace_keyword(src: str, rpls: list) -> str:
 	return replaced
 
 
-def generatereply(query: str) -> List[InlineQueryResultArticle]:
+def generatereply(query: list) -> List[InlineQueryResultArticle]:
 	"""
 	Generate the response to the inline query.
 
@@ -317,9 +317,9 @@ def generatereply(query: str) -> List[InlineQueryResultArticle]:
 	- list[InlineQueryResultArticle]
 	"""
 	anslist = []  # List of inlinequeryanswer
-	if query.split(' ')[0] == 'group':
+	if query[0] == 'group':
 		# Search for groups if the firstword of query is 'group'
-		for i in listgrps(query.split(' ')[1]):
+		for i in listgrps(query[1]):
 			_ = tagsingroup(i)
 			tags = _[1]
 			desc = _[0]
@@ -335,9 +335,8 @@ def generatereply(query: str) -> List[InlineQueryResultArticle]:
 				)
 			))
 	else:
-		_ = query.split(' ')  # Search for TAGS using keyword
-		pattern = _[0]
-		argv = _[1:] if len(_) > 0 else [] 
+		pattern =query[0]
+		argv = query[1:] if len(query) > 0 else [] 
 		for i in listtags(pattern):  # Acquire tag info
 			cmd = getsnippet(i)
 			command = replace_keyword(cmd[0], argv)
